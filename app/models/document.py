@@ -11,7 +11,7 @@ class Document(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
 
     invoice_id: UUID = Field(
-        foreign_key="invoices.id_invoice",
+        foreign_key="invoices.id",
         nullable=False,
         unique=True
     )

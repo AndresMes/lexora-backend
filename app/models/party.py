@@ -11,7 +11,7 @@ class Party(SQLModel, table=True):
 
     name: str = Field(nullable=False, max_length=250)
     nit: Optional[str] = Field(max_length=250)
-    party_type: Optional[str] = Field(max_length=250)
+    party_type: str = Field(max_length=20)
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
