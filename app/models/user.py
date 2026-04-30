@@ -2,7 +2,6 @@ from sqlmodel import SQLModel, Field
 from uuid import UUID, uuid4
 from datetime import datetime
 
-
 class User(SQLModel, table=True):
 
     __tablename__ = "users"
