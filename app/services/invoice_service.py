@@ -1,9 +1,25 @@
-import datetime
-from uuid import uuid4
+###############################################################################################################################################
+
+#                HAY QUE CAMBIAR Y VERIFICAR TODOS LOS METODOS DEL SERVICIO. ESTO ES SOLO UNA PRUEBA Y NO ES LA VERSIÓN FINAL
+
+###############################################################################################################################################
+
+from ast import List
+from datetime import datetime
+from uuid import UUID, uuid4
+
+from fastapi import HTTPException
 
 from app.repositories.invoice_repository import InvoiceRepository
 from app.repositories.party_repository import PartyRepository
+from app.schemas.responses.document_read import DocumentRead
+from app.schemas.responses.extracted_field_read import ExtractedFieldRead
 from app.schemas.responses.invoice_full import InvoiceFullRead
+
+#Para eliminar luego si se dejan de usar
+from app.schemas.responses.invoice_item_read import InvoiceItemRead
+from app.schemas.responses.invoice_read import InvoiceRead
+from app.schemas.responses.party_read import PartyRead
 from app.services.interfaces.invoice_service_interface import InvoiceServiceInterface
 
 
@@ -15,18 +31,26 @@ class InvoiceService(InvoiceServiceInterface):
         self.party_repo = party_repo
     
     def process_invoice(self, file) -> InvoiceFullRead:
-        return self.__fake_invoice()
+        return self.fake_invoice()
     
     def save_invoice(self, data) -> InvoiceFullRead:
-        return self.__fake_invoice()
+        return self.fake_invoice()
     
+    def list_invoices(self) -> List[InvoiceFullRead]:
+        return self.invoice_repo.get_all()
+    
+    def get_invoice_by_id(self, id: UUID) -> InvoiceFullRead:
+        invoice = self.invoice_repo.get_by_id(id)
+
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+
+        return self._fake_invoice()  # 🔥 temporal
+            
     #SOLO MIENTRAS SE IMPLEMENTA HACEMOS UN DATO CONSTANTE
     
-    def _fake_invoice(self) -> InvoiceFullRead:
-        from ..schemas.responses import (
-            InvoiceRead, PartyRead, InvoiceItemRead,
-            DocumentRead, ExtractedFieldRead
-        )
+    def fake_invoice(self) -> InvoiceFullRead:
+        
 
         return InvoiceFullRead(
             invoice=InvoiceRead(
