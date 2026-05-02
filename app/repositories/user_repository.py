@@ -32,6 +32,7 @@ class UserRepository:
             .limit(limit)
         )
         return self.session.exec(stmt).all()
+    
 
     def delete(self, user: User) -> None:
         self.session.delete(user)
