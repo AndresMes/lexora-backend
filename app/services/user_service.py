@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.requests.invoice_update import UserUpdate
+from app.schemas.requests.user_update import UserUpdate
 from app.schemas.responses.user_read import UserRead
 from app.services.interfaces.user_service_interface import UserServiceInterface
 
@@ -76,7 +76,7 @@ class UserService(UserServiceInterface):
         if userDto.password:
             user.password_hash = hash_password(userDto.password)
 
-        updated_user = self.user_repo.update(user)
+        updated_user = self.user_repo.update_user(user)
 
         return UserRead(
             id=updated_user.id,
