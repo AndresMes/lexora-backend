@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from ast import List
 from uuid import UUID
 
+from numpy import delete
+
 from app.schemas.requests.user_request import UserRequest
 from app.schemas.responses.user_read import UserRead
 
@@ -16,4 +18,13 @@ class UserServiceInterface(ABC):
         pass
     
     @abstractmethod
-    def update_user(self, id_user: UUID, userDto:UserRequest) -> UserRead
+    def get_by_email(self, email:str) -> UserRead:
+        pass
+    
+    @abstractmethod
+    def update_user(self, id_user: UUID, userDto:UserRequest) -> UserRead:
+        pass
+    
+    @abstractmethod
+    def delete_user(self, id_user: UUID):
+        pass
