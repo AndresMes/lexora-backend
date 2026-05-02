@@ -1,11 +1,11 @@
 from datetime import datetime
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from fastapi import HTTPException
 
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.requests.user_request import UserRequest
+from app.schemas.requests.invoice_update import UserUpdate
 from app.schemas.responses.user_read import UserRead
 from app.services.interfaces.user_service_interface import UserServiceInterface
 
@@ -60,7 +60,7 @@ class UserService(UserServiceInterface):
             created_at=user.created_at
         )
 
-    def update_user(self, id_user: UUID, userDto: UserRequest) -> UserRead:
+    def update_user(self, id_user: UUID, userDto: UserUpdate) -> UserRead:
 
         user = self.user_repo.get_by_id(id_user)
 
@@ -91,7 +91,7 @@ class UserService(UserServiceInterface):
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        self.user_repo.delete(id_user)
+        self.user_repo.delete(user)
 
         return {"message": "User deleted successfully"}
         
