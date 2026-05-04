@@ -1,8 +1,5 @@
 from abc import ABC, abstractmethod
-from ast import List
 from uuid import UUID
-
-from numpy import delete
 
 from app.schemas.requests.user_create import UserCreate
 from app.schemas.requests.user_update import UserUpdate
