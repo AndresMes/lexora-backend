@@ -18,4 +18,4 @@ def get_user_repo(session: Session = Depends(get_db)):
     return UserRepository(session)
 
 def get_party_repo(session: Session = Depends(get_db)):
-    return PartyRepository
+    return PartyRepository(session)
