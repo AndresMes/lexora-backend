@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from uuid import UUID
 from typing import List
 
+from app.enums.party_type_enum import PartyType
 from app.models.party import Party
 from app.repositories.party_repository import PartyRepository
 from app.schemas.requests.party_create import PartyCreate
@@ -33,7 +34,7 @@ class PartyService(PartyServiceInterface):
         parties = self.party_repo.get_all()
         return [self._to_read(p) for p in parties]
 
-    def get_by_type(self, party_type: str) -> List[PartyRead]:
+    def get_by_type(self, party_type: PartyType) -> List[PartyRead]:
         parties = self.party_repo.get_by_type(party_type)
         return [self._to_read(p) for p in parties]
 

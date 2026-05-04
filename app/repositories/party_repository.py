@@ -2,6 +2,8 @@ from typing import Optional, List
 from uuid import UUID
 
 from sqlmodel import Session, select
+
+from app.enums.party_type_enum import PartyType
 from ..models.party import Party
 
 
@@ -32,10 +34,10 @@ class PartyRepository:
         )
         return self.session.exec(stmt).all()
 
-    def get_by_type(self, party_type_arg: str, skip: int = 0, limit: int = 100) -> List[Party]:
+    def get_by_type(self, party_type: PartyType, skip: int = 0, limit: int = 100) -> List[Party]:
         stmt = (
             select(Party)
-            .where(Party.party_type == party_type_arg)
+            .where(Party.party_type == party_type)
             .order_by(Party.created_at.desc())
             .offset(skip)
             .limit(limit)

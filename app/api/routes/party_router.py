@@ -3,6 +3,7 @@ from typing import List
 from uuid import UUID
 
 from app.api.deps.party_service_dep import get_party_service
+from app.enums.party_type_enum import PartyType
 from app.schemas.requests.party_create import PartyCreate
 from app.schemas.requests.party_update import PartyUpdate
 from app.schemas.responses.party_read import PartyRead
@@ -37,7 +38,7 @@ def get_party_by_nit(
 
 @party_router.get("/type/{party_type}", response_model=List[PartyRead])
 def get_parties_by_type(
-    party_type: str,
+    party_type: PartyType,
     service: PartyServiceInterface = Depends(get_party_service)
 ):
     return service.get_by_type(party_type)
