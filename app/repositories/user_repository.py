@@ -32,6 +32,12 @@ class UserRepository:
             .limit(limit)
         )
         return self.session.exec(stmt).all()
+    
+    def update_user(self, user:User) -> User:
+        self.session.add(user)
+        self.session.commit()
+        self.session.refresh(user)
+        return user
 
     def delete(self, user: User) -> None:
         self.session.delete(user)

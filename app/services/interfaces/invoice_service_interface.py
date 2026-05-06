@@ -1,0 +1,24 @@
+from abc import ABC, abstractmethod
+from ast import List
+from uuid import UUID
+
+from app.schemas.responses.invoice_full import InvoiceFullRead
+
+
+class InvoiceServiceInterface(ABC):
+
+    @abstractmethod
+    def process_invoice(self, file) -> InvoiceFullRead:
+        pass
+
+    @abstractmethod
+    def save_invoice(self, data) -> InvoiceFullRead:
+        pass
+    
+    @abstractmethod
+    def list_invoices(self) -> List[InvoiceFullRead]:
+        pass
+    
+    @abstractmethod
+    def get_invoice_by_id(self, id: UUID) -> InvoiceFullRead:
+        pass

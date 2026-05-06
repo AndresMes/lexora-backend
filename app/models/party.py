@@ -3,6 +3,8 @@ from uuid import UUID, uuid4
 from datetime import datetime, date
 from typing import Optional
 
+from app.enums.party_type_enum import PartyType
+
 class Party(SQLModel, table=True):
 
     __tablename__ = "parties"
@@ -11,7 +13,7 @@ class Party(SQLModel, table=True):
 
     name: str = Field(nullable=False, max_length=250)
     nit: Optional[str] = Field(max_length=250)
-    party_type: str = Field(max_length=20)
+    party_type: PartyType = Field(max_length=20)
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

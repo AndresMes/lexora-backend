@@ -2,6 +2,8 @@ from typing import Optional, List
 from uuid import UUID
 
 from sqlmodel import Session, select
+
+from app.enums.party_type_enum import PartyType
 from ..models.party import Party
 
 
@@ -32,10 +34,10 @@ class PartyRepository:
         )
         return self.session.exec(stmt).all()
 
-    def get_by_type(self, party_type: str, skip: int = 0, limit: int = 100) -> List[Party]:
+    def get_by_type(self, party_type: PartyType, skip: int = 0, limit: int = 100) -> List[Party]:
         stmt = (
             select(Party)
-            .where(Party.type == party_type)
+            .where(Party.party_type == party_type)
             .order_by(Party.created_at.desc())
             .offset(skip)
             .limit(limit)
@@ -46,7 +48,7 @@ class PartyRepository:
         stmt = select(Party).where(Party.name.ilike(f"%{name}%"))
         return self.session.exec(stmt).all()
 
-    def get_or_create(self, name: str, nit: Optional[str], party_type: str) -> Party:
+    def get_or_create(self, name: str, nit: Optional[str], party_type_arg: str) -> Party:
         if nit:
             existing = self.get_by_nit(nit)
             if existing:
@@ -55,10 +57,16 @@ class PartyRepository:
         party = Party(
             name=name,
             nit=nit,
-            type=party_type
+            party_type=party_type_arg
         )
 
         return self.create(party)
+    
+    def update(self, party: Party) -> Party:
+        self.session.add(party)
+        self.session.commit()
+        self.session.refresh(party)
+        return party
 
     def delete(self, party: Party) -> None:
         self.session.delete(party)
