@@ -6,16 +6,23 @@ class ImagePrepocessor:
     def __init__(self):
         pass
     
-    def preprocess_image(self, image):
+    def preprocess_image(self, image_bytes):
         
+        image = self._bytes_to_image(image_bytes)
         resized = self._resize(image)
         in_grayscale = self._to_grayscale(resized)
         shadows_removed = self._eliminate_shadows(in_grayscale)
         deskewed = self._deskow(shadows_removed)
         binarized = self._binarization(deskewed)
         denoised = self._denoise(binarized)
-        return denoised
+        return self._image_to_bytes(denoised)
         
+    def _bytes_to_image(self, image_bytes: bytes) -> np.ndarray:
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None:
+            raise ValueError("No se pudo decodificar la imagen")
+        return img
     
     def _resize(self, image):
         
@@ -99,3 +106,9 @@ class ImagePrepocessor:
     
     def _denoise(self, image):
         return cv2.fastNlMeansDenoising(image, h=10)
+    
+    def _image_to_bytes(self, image: np.ndarray) -> bytes:
+        success, buffer = cv2.imencode('.png', image)
+        if not success:
+            raise ValueError("No se pudo codificar la imagen")
+        return buffer.tobytes()
