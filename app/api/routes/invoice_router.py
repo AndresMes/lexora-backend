@@ -22,7 +22,7 @@ def process_invoice(
 
 @invoice_router.post("/save", response_model=InvoiceFullRead)
 def save_invoice(
-    data: dict,  # luego lo cambias por InvoiceSave
+    data: dict,  
     service: InvoiceServiceInterface = Depends(get_invoice_service)
 ):
     return service.save_invoice(data)
