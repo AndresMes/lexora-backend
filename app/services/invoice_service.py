@@ -8,8 +8,9 @@ from ast import List
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 
+from app.orchestator.orchestator import InvoiceOrchestator
 from app.repositories.invoice_repository import InvoiceRepository
 from app.repositories.party_repository import PartyRepository
 from app.schemas.responses.document_read import DocumentRead
@@ -25,12 +26,15 @@ from app.services.interfaces.invoice_service_interface import InvoiceServiceInte
 
 class InvoiceService(InvoiceServiceInterface):
     
-    def __init__(self, invoice_repo: InvoiceRepository, party_repo: PartyRepository):
+    def __init__(self, invoice_repo: InvoiceRepository, party_repo: PartyRepository, orchestator: InvoiceOrchestator):
         
         self.invoice_repo = invoice_repo
         self.party_repo = party_repo
+        self.orchestator = orchestator
     
-    def process_invoice(self, file) -> InvoiceFullRead:
+    async def process_invoice(self, file: UploadFile) -> InvoiceFullRead:
+        file_bytes = await file.read()
+        result = await self.orchestator.process_invoice(file_bytes, file.filename)
         return self.fake_invoice()
     
     def save_invoice(self, data) -> InvoiceFullRead:
@@ -70,7 +74,7 @@ class InvoiceService(InvoiceServiceInterface):
                 id=uuid4(),
                 name="ACME Corp",
                 nit="123456",
-                party_type="PROVIDER"
+                party_type="DISTRIBUTOR"
             ),
             items=[
                 InvoiceItemRead(

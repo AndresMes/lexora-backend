@@ -13,16 +13,16 @@ invoice_router = APIRouter(prefix="/invoices", tags=["Invoices"])
 
 
 @invoice_router.post("/process", response_model=InvoiceFullRead)
-def process_invoice(
+async def process_invoice(
     file: UploadFile = File(...),
     service: InvoiceServiceInterface = Depends(get_invoice_service)
 ):
-    return service.process_invoice(file)
+    return await service.process_invoice(file)
 
 
 @invoice_router.post("/save", response_model=InvoiceFullRead)
 def save_invoice(
-    data: dict,  # luego lo cambias por InvoiceSave
+    data: dict,  
     service: InvoiceServiceInterface = Depends(get_invoice_service)
 ):
     return service.save_invoice(data)
