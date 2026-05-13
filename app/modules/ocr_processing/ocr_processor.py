@@ -6,7 +6,7 @@ class OCRProcessor:
     def __init__(self, reader):
         self.reader = reader
     
-    def extract_text(self, image_bytes: bytes):
+    def extract_text(self, image_bytes: bytes) -> dict:
         
         image = self._bytes_to_image(image_bytes)
         
@@ -27,14 +27,28 @@ class OCRProcessor:
         for result in results:
             bbox, text, confidence = result
             if confidence > 0.4:
+                
+                clean_bbox = [
+                    [int(point[0]), int(point[1])]
+                    for point in bbox
+                ]
+                
                 extracted.append({
                     "text": text,
-                    "confidence": float(confidence),
-                    "bbox": bbox
+                    "confidence": round(float(confidence),4),
+                    "bbox": clean_bbox
                 })
 
         rows = self._reconstruct_rows(extracted)
-        return "\n".join(rows)
+        
+        avg_confidence = np.mean([e["confidence"] for e in extracted]) if extracted else 0.0
+        
+        return {
+        "raw_text": "\n".join(rows),
+        "document_confidence": round(float(avg_confidence), 4),
+        "detections": extracted
+    }
+
     
     def _reconstruct_rows(self, extracted:list, y_tolerance: int = 20) -> list:
         groups = []
