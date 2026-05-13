@@ -1,12 +1,15 @@
 import cv2
 import numpy as np
 
+from app.schemas.responses.ocr_detection_read import OCRDetection
+from app.schemas.responses.ocr_result_read import OCRResult
+
 class OCRProcessor:
     
     def __init__(self, reader):
         self.reader = reader
     
-    def extract_text(self, image_bytes: bytes) -> dict:
+    def extract_text(self, image_bytes: bytes) -> OCRResult:
         
         image = self._bytes_to_image(image_bytes)
         
@@ -22,7 +25,7 @@ class OCRProcessor:
             link_threshold=0.4
         )
 
-        extracted = []
+        extracted: list[OCRDetection] = []
 
         for result in results:
             bbox, text, confidence = result
@@ -33,32 +36,42 @@ class OCRProcessor:
                     for point in bbox
                 ]
                 
-                extracted.append({
-                    "text": text,
-                    "confidence": round(float(confidence),4),
-                    "bbox": clean_bbox
-                })
+                extracted.append(
+                    OCRDetection(
+                        text=text,
+                        confidence=round(float(confidence),4),
+                        bbox=clean_bbox
+                    )
+                )
 
         rows = self._reconstruct_rows(extracted)
         
-        avg_confidence = np.mean([e["confidence"] for e in extracted]) if extracted else 0.0
+        avg_confidence = np.mean([
+            e.confidence
+            for e in extracted
+        ]) if extracted else 0.0
         
-        return {
-        "raw_text": "\n".join(rows),
-        "document_confidence": round(float(avg_confidence), 4),
-        "detections": extracted
-    }
+        return OCRResult(
+            raw_text="\n".join(rows),
+            document_confidence=round(float(avg_confidence), 4),
+            detections=extracted
+        )
 
     
-    def _reconstruct_rows(self, extracted:list, y_tolerance: int = 20) -> list:
+    def _reconstruct_rows(self, extracted:list[OCRDetection], y_tolerance: int = 20) -> list:
         groups = []
 
         for element in extracted:
-            y1 = element["bbox"][0][1]
+            y1 = element.bbox[0][1]
             placed = False
 
             for group in groups:
-                group_y = np.mean([e["bbox"][0][1] for e in group])
+                
+                group_y = np.mean([
+                    e.bbox[0][1]
+                    for e in group
+                ])
+                
                 if abs(y1 - group_y) <= y_tolerance:
                     group.append(element)
                     placed = True
@@ -69,8 +82,16 @@ class OCRProcessor:
 
         rows = []
         for group in groups:
-            sorted_group = sorted(group, key=lambda e: e["bbox"][0][0])
-            row_text = " | ".join([e["text"] for e in sorted_group])
+            sorted_group = sorted(
+                group,
+                key=lambda e: e.bbox[0][0]
+            )
+
+            row_text = " | ".join([
+                e.text
+                for e in sorted_group
+            ])
+            
             rows.append(row_text)
 
         return rows
