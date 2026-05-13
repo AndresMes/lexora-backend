@@ -12,4 +12,5 @@ class InvoiceOrchestator:
         
         processed_image = self.preprocessor.preprocess_image(file_bytes)
         text = self.ocr_processor.extract_text(processed_image)
+        return text
         
