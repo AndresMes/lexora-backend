@@ -4,7 +4,7 @@
 
 ###############################################################################################################################################
 
-from ast import List
+from typing import List
 from datetime import datetime
 from uuid import UUID, uuid4
 
@@ -36,6 +36,19 @@ class InvoiceService(InvoiceServiceInterface):
         file_bytes = await file.read()
         result = await self.orchestator.process_invoice(file_bytes, file.filename)
         return self.fake_invoice()
+    
+    async def process_invoice_debug(self, file: UploadFile):
+        file_bytes = await file.read()
+
+        result = await self.orchestator.process_invoice(
+            file_bytes,
+            file.filename
+        )
+
+        return {
+            "filename": file.filename,
+            "ocr_result": result
+        }
     
     def save_invoice(self, data) -> InvoiceFullRead:
         return self.fake_invoice()
