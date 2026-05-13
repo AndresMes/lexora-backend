@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+import easyocr
 from fastapi import FastAPI
 
 from app.api.routes.party_router import party_router 
@@ -6,7 +8,12 @@ from .api.routes.invoice_router import invoice_router
 from app.api.routes.audit_log_router import audit_router
 import app.models
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.ocr_reader = easyocr.Reader(['es'], gpu=False)
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 def read_root():
