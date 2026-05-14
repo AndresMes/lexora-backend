@@ -19,13 +19,6 @@ async def process_invoice(
 ):
     return await service.process_invoice(file)
 
-@invoice_router.post("/process-debug")
-async def process_invoice_debug(
-    file: UploadFile = File(...),
-    service: InvoiceServiceInterface = Depends(get_invoice_service)
-):
-    return await service.process_invoice_debug(file)
-
 
 @invoice_router.post("/save", response_model=InvoiceFullRead)
 def save_invoice(
