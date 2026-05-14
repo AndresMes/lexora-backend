@@ -2,6 +2,7 @@ import json
 import os
 from dotenv import load_dotenv
 from google import genai
+from sympy import content
 
 from app.schemas.responses.ocr_result_read import OCRResult
 
@@ -12,13 +13,14 @@ class LLMExtractor():
     
     def __init__(self, model_name):
         self.api_key = os.getenv("GEMINI_API_KEY")
-        genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel(model_name)
+        self.model_name = model_name
+        self.client = genai.Client(api_key=self.api_key)
     
     def extract_invoice_data(self, ocr_text: OCRResult):
         
         prompt = self._build_prompt(ocr_text.raw_text)
-        response = self.model.generate_content(prompt)
+        response = self.client.models.generate_content(model=self.model_name, contents=prompt)
+        
         return self._parse_response(response.text)
         
         

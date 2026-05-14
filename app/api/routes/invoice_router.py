@@ -12,7 +12,7 @@ from app.schemas.responses.invoice_full import InvoiceFullRead
 invoice_router = APIRouter(prefix="/invoices", tags=["Invoices"])
 
 
-@invoice_router.post("/process", response_model=InvoiceFullRead)
+@invoice_router.post("/process")
 async def process_invoice(
     file: UploadFile = File(...),
     service: InvoiceServiceInterface = Depends(get_invoice_service)
