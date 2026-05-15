@@ -32,19 +32,10 @@ class InvoiceService(InvoiceServiceInterface):
         self.party_repo = party_repo
         self.orchestator = orchestator
     
-    async def process_invoice(self, file: UploadFile) -> InvoiceFullRead:
+    async def process_invoice(self, file: UploadFile):
         file_bytes = await file.read()
         result = await self.orchestator.process_invoice(file_bytes, file.filename)
-        return self.fake_invoice()
-    
-    async def process_invoice_debug(self, file: UploadFile):
-        file_bytes = await file.read()
-
-        result = await self.orchestator.process_invoice(
-            file_bytes,
-            file.filename
-        )
-
+        
         return {
             "filename": file.filename,
             "ocr_result": result
