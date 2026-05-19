@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, UploadFile, File
 from typing import List
 from uuid import UUID
 
+from app.schemas.requests.invoice_create import InvoiceSaveRequest
 from app.services.interfaces.invoice_service_interface import InvoiceServiceInterface
 from app.api.deps.invoice_service_dep import get_invoice_service
 
@@ -22,7 +23,7 @@ async def process_invoice(
 
 @invoice_router.post("/save", response_model=InvoiceFullRead)
 def save_invoice(
-    data: dict,  
+    data: InvoiceSaveRequest,  
     service: InvoiceServiceInterface = Depends(get_invoice_service)
 ):
     return service.save_invoice(data)

@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 
 from app.enums.party_type_enum import PartyType
 from app.models.party import Party
@@ -61,6 +61,19 @@ class PartyService(PartyServiceInterface):
         saved = self.party_repo.create(party)
 
         return self._to_read(saved)
+    
+    def get_or_create(self, name: str, nit: Optional[str], party_type_arg: str) -> Party:
+        if nit:
+            existing = self.party_repo.get_by_nit(nit)
+            if existing:
+                return existing
+
+        party = Party(
+            name=name.strip(),
+            nit=nit,
+            party_type=party_type_arg
+        )
+        return self.party_repo.create(party)
     
     def update_party(self, id_party, dto):
         party = self.party_repo.get_by_id(id_party)
