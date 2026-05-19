@@ -8,7 +8,7 @@ from app.enums.audit_entity import AuditEntity
 from app.schemas.filters.audit_log_filter import AuditLogFilter
 from app.schemas.requests.audit_log_create import AuditLogCreate
 from app.schemas.responses.audit_log_read import AuditLogRead
-from app.services.interfaces.audit_log_service import AuditLogService
+from app.services.audit_log_service import AuditLogService
 
 audit_router = APIRouter(prefix="/audit-logs", tags=["Audit Logs"])
 
