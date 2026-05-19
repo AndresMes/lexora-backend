@@ -5,7 +5,7 @@
 ###############################################################################################################################################
 
 from typing import List
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException, UploadFile
@@ -170,3 +170,21 @@ class InvoiceService(InvoiceServiceInterface):
             document=DocumentRead.model_validate(invoice.document) if invoice.document else None,
             extracted_fields=[ExtractedFieldRead.model_validate(f) for f in invoice.extracted_fields]
         ) 
+
+    def get_invoices_by_date(self, start_date: date, end_date: date, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
+    
+        if start_date > end_date:
+            raise HTTPException(status_code=400, detail="La fecha de inicio no puede ser mayor a la fecha de fin.")
+
+        invoices = self.invoice_repo.get_by_issue_date_range(start_date, end_date, skip, limit)
+
+        return [
+            InvoiceFullRead(
+                invoice=InvoiceRead.model_validate(inv),
+                provider=PartyRead.model_validate(inv.provider),
+                items=[InvoiceItemRead.model_validate(i) for i in inv.items],
+                document=DocumentRead.model_validate(inv.document) if inv.document else None,
+                extracted_fields=[ExtractedFieldRead.model_validate(f) for f in inv.extracted_fields]
+            )
+            for inv in invoices
+        ]

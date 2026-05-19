@@ -2,7 +2,7 @@ from sqlmodel import Session, select
 from typing import Optional, List
 from ..models.invoice import Invoice
 from uuid import UUID
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy.orm import selectinload
 
@@ -36,6 +36,17 @@ class InvoiceRepository:
             .where(Invoice.created_at >= start_date)
             .where(Invoice.created_at <= end_date)
             .order_by(Invoice.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        return self.session.exec(stmt).all()
+    
+    def get_by_issue_date_range(self, start_date: date, end_date: date, skip: int = 0, limit: int = 100) -> List[Invoice]:
+        stmt = (
+            self._base_query()
+            .where(Invoice.issue_date >= start_date)
+            .where(Invoice.issue_date <= end_date)
+            .order_by(Invoice.issue_date.desc())
             .offset(skip)
             .limit(limit)
         )

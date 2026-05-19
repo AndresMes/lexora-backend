@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, UploadFile, File
+from datetime import date
+
+from fastapi import APIRouter, Depends, Query, UploadFile, File
 from typing import List
 from uuid import UUID
 
@@ -34,6 +36,16 @@ def list_invoices(
     service: InvoiceServiceInterface = Depends(get_invoice_service)
 ):
     return service.list_invoices()
+
+@invoice_router.get("/by-date", response_model=List[InvoiceFullRead])
+def get_invoices_by_date(
+    start_date: date = Query(..., description="Fecha de inicio (YYYY-MM-DD)"),
+    end_date: date = Query(..., description="Fecha de fin (YYYY-MM-DD)"),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    service: InvoiceServiceInterface = Depends(get_invoice_service)
+):
+    return service.get_invoices_by_date(start_date, end_date, skip, limit)
 
 
 @invoice_router.get("/{invoice_id}", response_model=InvoiceFullRead)
