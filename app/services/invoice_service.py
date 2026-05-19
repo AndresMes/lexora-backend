@@ -1,12 +1,6 @@
-###############################################################################################################################################
-
-#                HAY QUE CAMBIAR Y VERIFICAR TODOS LOS METODOS DEL SERVICIO. ESTO ES SOLO UNA PRUEBA Y NO ES LA VERSIÓN FINAL
-
-###############################################################################################################################################
-
 from typing import List
-from datetime import date, datetime
-from uuid import UUID, uuid4
+from datetime import date
+from uuid import UUID
 
 from fastapi import HTTPException, UploadFile
 from psycopg import IntegrityError
@@ -146,16 +140,7 @@ class InvoiceService(InvoiceServiceInterface):
     def list_invoices(self) -> List[InvoiceFullRead]:
         invoices = self.invoice_repo.get_all()
         
-        return [
-            InvoiceFullRead(
-                invoice=InvoiceRead.model_validate(inv),
-                provider=PartyRead.model_validate(inv.provider),
-                items=[InvoiceItemRead.model_validate(i) for i in inv.items],
-                document=DocumentRead.model_validate(inv.document) if inv.document else None,
-                extracted_fields=[ExtractedFieldRead.model_validate(f) for f in inv.extracted_fields]
-            )
-            for inv in invoices
-        ]
+        return [self._to_full_read(inv) for inv in invoices]
     
     def get_invoice_by_id(self, id: UUID) -> InvoiceFullRead:
         invoice = self.invoice_repo.get_by_id(id)
@@ -163,13 +148,7 @@ class InvoiceService(InvoiceServiceInterface):
         if not invoice:
             raise HTTPException(status_code=404, detail="Invoice not found")
 
-        return InvoiceFullRead(
-            invoice=InvoiceRead.model_validate(invoice),
-            provider=PartyRead.model_validate(invoice.provider),
-            items=[InvoiceItemRead.model_validate(i) for i in invoice.items],
-            document=DocumentRead.model_validate(invoice.document) if invoice.document else None,
-            extracted_fields=[ExtractedFieldRead.model_validate(f) for f in invoice.extracted_fields]
-        ) 
+        return self._to_full_read(invoice)
 
     def get_invoices_by_date(self, start_date: date, end_date: date, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
     
@@ -178,13 +157,39 @@ class InvoiceService(InvoiceServiceInterface):
 
         invoices = self.invoice_repo.get_by_issue_date_range(start_date, end_date, skip, limit)
 
-        return [
-            InvoiceFullRead(
-                invoice=InvoiceRead.model_validate(inv),
-                provider=PartyRead.model_validate(inv.provider),
-                items=[InvoiceItemRead.model_validate(i) for i in inv.items],
-                document=DocumentRead.model_validate(inv.document) if inv.document else None,
-                extracted_fields=[ExtractedFieldRead.model_validate(f) for f in inv.extracted_fields]
+        return [self._to_full_read(inv) for inv in invoices]
+        
+    def get_invoices_by_provider(self, provider_id: UUID, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
+        provider = self.party_service.get_by_id(provider_id)
+        if not provider:
+            raise HTTPException(status_code=404, detail="Proveedor no encontrado.")
+
+        invoices = self.invoice_repo.get_by_provider_id(provider_id, skip, limit)
+        return [self._to_full_read(inv) for inv in invoices]
+
+    def get_invoices_by_category(self, category: str, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
+        if not category.strip():
+            raise HTTPException(status_code=400, detail="La categoría no puede estar vacía.")
+
+        invoices = self.invoice_repo.get_by_category(category.strip(), skip, limit)
+        return [self._to_full_read(inv) for inv in invoices]
+
+    def get_invoices_by_status(self, status: str, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
+        valid_statuses = {"PENDING", "APPROVED", "REJECTED"}
+        if status.upper() not in valid_statuses:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Estado inválido. Debe ser uno de: {valid_statuses}"
             )
-            for inv in invoices
-        ]
+
+        invoices = self.invoice_repo.get_by_status(status.upper(), skip, limit)
+        return [self._to_full_read(inv) for inv in invoices]
+    
+    def _to_full_read(self, invoice: Invoice) -> InvoiceFullRead:
+        return InvoiceFullRead(
+            invoice=InvoiceRead.model_validate(invoice),
+            provider=PartyRead.model_validate(invoice.provider),
+            items=[InvoiceItemRead.model_validate(i) for i in invoice.items],
+            document=DocumentRead.model_validate(invoice.document) if invoice.document else None,
+            extracted_fields=[ExtractedFieldRead.model_validate(f) for f in invoice.extracted_fields]
+        )

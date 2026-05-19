@@ -54,3 +54,32 @@ def get_invoice_by_id(
     service: InvoiceServiceInterface = Depends(get_invoice_service)
 ):
     return service.get_invoice_by_id(invoice_id)
+
+@invoice_router.get("/provider/{provider_id}", response_model=List[InvoiceFullRead])
+def get_invoices_by_provider(
+    provider_id: UUID,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    service: InvoiceServiceInterface = Depends(get_invoice_service)
+):
+    return service.get_invoices_by_provider(provider_id, skip, limit)
+
+
+@invoice_router.get("/category/{category}", response_model=List[InvoiceFullRead])
+def get_invoices_by_category(
+    category: str,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    service: InvoiceServiceInterface = Depends(get_invoice_service)
+):
+    return service.get_invoices_by_category(category, skip, limit)
+
+
+@invoice_router.get("/status/{status}", response_model=List[InvoiceFullRead])
+def get_invoices_by_status(
+    status: str,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    service: InvoiceServiceInterface = Depends(get_invoice_service)
+):
+    return service.get_invoices_by_status(status, skip, limit)
