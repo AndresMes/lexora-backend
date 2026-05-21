@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from uuid import UUID
 
@@ -9,3 +9,5 @@ class PartyRead(BaseModel):
     name: str
     nit: Optional[str]
     party_type: PartyType
+    
+    model_config = ConfigDict(from_attributes=True)

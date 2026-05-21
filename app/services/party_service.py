@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 
 from app.enums.party_type_enum import PartyType
 from app.models.party import Party
@@ -18,7 +18,7 @@ class PartyService(PartyServiceInterface):
         party = self.party_repo.get_by_id(id_party)
 
         if not party:
-            raise HTTPException(status_code=404, detail="Party not found")
+            raise HTTPException(status_code=404, detail="Proveedor no encontrado")
 
         return self._to_read(party)
 
@@ -26,7 +26,7 @@ class PartyService(PartyServiceInterface):
         party = self.party_repo.get_by_nit(nit)
 
         if not party:
-            raise HTTPException(status_code=404, detail="Party not found")
+            raise HTTPException(status_code=404, detail="Proveedor no encontrado")
 
         return self._to_read(party)
 
@@ -45,7 +45,7 @@ class PartyService(PartyServiceInterface):
     def create_party(self, party_dto: PartyCreate) -> PartyRead:
 
         if not party_dto.name:
-            raise HTTPException(status_code=400, detail="Name is required")
+            raise HTTPException(status_code=400, detail="Nombre es requerido")
 
         if party_dto.nit:
             existing = self.party_repo.get_by_nit(party_dto.nit)
@@ -62,16 +62,29 @@ class PartyService(PartyServiceInterface):
 
         return self._to_read(saved)
     
+    def get_or_create(self, name: str, nit: Optional[str], party_type_arg: str) -> Party:
+        if nit:
+            existing = self.party_repo.get_by_nit(nit)
+            if existing:
+                return existing
+
+        party = Party(
+            name=name.strip(),
+            nit=nit,
+            party_type=party_type_arg
+        )
+        return self.party_repo.create(party)
+    
     def update_party(self, id_party, dto):
         party = self.party_repo.get_by_id(id_party)
 
         if not party:
-            raise HTTPException(status_code=404, detail="Party not found")
+            raise HTTPException(status_code=404, detail="Proveedor no encontrado")
 
         if dto.nit and dto.nit != party.nit:
             existing = self.party_repo.get_by_nit(dto.nit)
             if existing and existing.id != id_party:
-                raise HTTPException(status_code=409, detail="NIT already exists")
+                raise HTTPException(status_code=409, detail="El NIT ya existe")
 
         # Actualización parcial
         if dto.name is not None:
@@ -92,11 +105,11 @@ class PartyService(PartyServiceInterface):
         party = self.party_repo.get_by_id(id_party)
 
         if not party:
-            raise HTTPException(status_code=404, detail="Party not found")
+            raise HTTPException(status_code=404, detail="Proveedor no encontrado")
 
         self.party_repo.delete(party)
 
-        return {"message": "Party deleted successfully"}
+        return {"message": "Proveedor eliminado satisfactoriamente"}
 
     def _to_read(self, party: Party) -> PartyRead:
         return PartyRead(

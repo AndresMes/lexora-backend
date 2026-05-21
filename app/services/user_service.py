@@ -20,7 +20,7 @@ class UserService(UserServiceInterface):
     def create_user(self, userDto):
         
         if self.user_repo.exists_by_email(userDto.email):
-            raise HTTPException(status_code=409, detail="Email already exists")
+            raise HTTPException(status_code=409, detail="El email ingresado ya existe")
         
         password_hash = hash_password(userDto.password)
         
@@ -39,7 +39,7 @@ class UserService(UserServiceInterface):
         user = self.user_repo.get_by_id(id_user)
 
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
         return UserRead(
             id=user.id,
@@ -52,7 +52,7 @@ class UserService(UserServiceInterface):
         user = self.user_repo.get_by_email(email.lower().strip())
 
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
         return UserRead(
             id=user.id,
@@ -65,11 +65,11 @@ class UserService(UserServiceInterface):
         user = self.user_repo.get_by_id(id_user)
 
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
         existing_user = self.user_repo.get_by_email(userDto.email)
         if existing_user and existing_user.id != id_user:
-            raise HTTPException(status_code=409, detail="Email already in use")
+            raise HTTPException(status_code=409, detail="El email ingresado ya está en uso")
 
         user.email = userDto.email.lower().strip()
 
@@ -89,10 +89,10 @@ class UserService(UserServiceInterface):
         user = self.user_repo.get_by_id(id_user)
 
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
         self.user_repo.delete(user)
 
-        return {"message": "User deleted successfully"}
+        return {"message": "Usuario eliminado satisfactoriamente"}
         
     

@@ -31,7 +31,7 @@ class AuditLogService:
         log = self.audit_log_repo.get_by_id(log_id)
 
         if not log:
-            raise HTTPException(status_code=404, detail="Audit log not found")
+            raise HTTPException(status_code=404, detail="Log de auditorio no encontrado")
 
         return self._to_read(log)
 
