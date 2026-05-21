@@ -146,7 +146,7 @@ class InvoiceService(InvoiceServiceInterface):
         invoice = self.invoice_repo.get_by_id(id)
 
         if not invoice:
-            raise HTTPException(status_code=404, detail="Invoice not found")
+            raise HTTPException(status_code=404, detail="Factura no encontrada")
 
         return self._to_full_read(invoice)
 
