@@ -24,12 +24,13 @@ class UserService(UserServiceInterface):
         
         password_hash = hash_password(userDto.password)
         
-        user = User(email=userDto.email.lower().strip(), password_hash=password_hash)
+        user = User(name=userDto.name, email=userDto.email.lower().strip(), password_hash=password_hash)
         
         saved_user = self.user_repo.create(user)
         
         return UserRead(
             id=saved_user.id,
+            name=saved_user.name,
             email=saved_user.email,
             created_at=saved_user.created_at
         )
@@ -43,6 +44,7 @@ class UserService(UserServiceInterface):
 
         return UserRead(
             id=user.id,
+            name = user.name,
             email=user.email,
             created_at=user.created_at
         )
@@ -56,6 +58,7 @@ class UserService(UserServiceInterface):
 
         return UserRead(
             id=user.id,
+            name = user.name,
             email=user.email,
             created_at=user.created_at
         )
@@ -72,6 +75,7 @@ class UserService(UserServiceInterface):
             raise HTTPException(status_code=409, detail="El email ingresado ya está en uso")
 
         user.email = userDto.email.lower().strip()
+        user.name = userDto.name.lower()
 
         if userDto.password:
             user.password_hash = hash_password(userDto.password)
@@ -80,6 +84,7 @@ class UserService(UserServiceInterface):
 
         return UserRead(
             id=updated_user.id,
+            name=updated_user.name,
             email=updated_user.email,
             created_at=updated_user.created_at
         )
