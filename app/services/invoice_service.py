@@ -1,9 +1,18 @@
+import csv
+import io
 from typing import List
 from datetime import date
 from uuid import UUID
 
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+
 from fastapi import HTTPException, UploadFile
 from psycopg import IntegrityError
+
+from xml.etree import ElementTree as ET
 
 from app.enums.audit_action_enum import AuditAction
 from app.enums.audit_entity import AuditEntity
@@ -193,3 +202,173 @@ class InvoiceService(InvoiceServiceInterface):
             document=DocumentRead.model_validate(invoice.document) if invoice.document else None,
             extracted_fields=[ExtractedFieldRead.model_validate(f) for f in invoice.extracted_fields]
         )
+        
+    def export_invoice_csv(self, invoice: InvoiceFullRead) -> str:
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        writer.writerow(["INFORMACIÓN DE LA FACTURA"])
+        writer.writerow(["Número", "Fecha", "Categoría", "Subtotal", "IVA", "Total", "Estado"])
+        writer.writerow([
+            invoice.invoice.invoice_number,
+            invoice.invoice.issue_date,
+            invoice.invoice.category,
+            invoice.invoice.subtotal,
+            invoice.invoice.iva,
+            invoice.invoice.total,
+            invoice.invoice.status
+        ])
+        
+        writer.writerow([])
+        
+        writer.writerow(["PROVEEDOR"])
+        writer.writerow(["Nombre", "NIT", "Tipo"])
+        writer.writerow([
+            invoice.provider.name,
+            invoice.provider.nit,
+            invoice.provider.party_type
+        ])
+        
+        writer.writerow([])
+        
+        writer.writerow(["ITEMS"])
+        writer.writerow(["Descripción", "Cantidad", "Precio Unitario", "Total"])
+        for item in invoice.items:
+            writer.writerow([
+                item.description,
+                item.quantity,
+                item.unit_price,
+                item.total
+            ])
+        
+        return output.getvalue()
+    
+    def export_invoice_xml(self, invoice: InvoiceFullRead) -> str:
+        root = ET.Element("Invoice", xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2")
+        root.set("xmlns:cbc", "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2")
+        root.set("xmlns:cac", "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2")
+
+        # Encabezado
+        ET.SubElement(root, "cbc:ID").text = invoice.invoice.invoice_number
+        ET.SubElement(root, "cbc:IssueDate").text = str(invoice.invoice.issue_date)
+        ET.SubElement(root, "cbc:InvoiceTypeCode").text = "01"
+        ET.SubElement(root, "cbc:DocumentCurrencyCode").text = "COP"
+
+        # Proveedor
+        supplier = ET.SubElement(root, "cac:AccountingSupplierParty")
+        party = ET.SubElement(supplier, "cac:Party")
+        ET.SubElement(party, "cbc:Name").text = invoice.provider.name
+        if invoice.provider.nit:
+            tax_scheme = ET.SubElement(party, "cac:PartyTaxScheme")
+            ET.SubElement(tax_scheme, "cbc:CompanyID").text = invoice.provider.nit
+
+        # Totales
+        monetary = ET.SubElement(root, "cac:LegalMonetaryTotal")
+        ET.SubElement(monetary, "cbc:LineExtensionAmount", currencyID="COP").text = str(invoice.invoice.subtotal or 0)
+        ET.SubElement(monetary, "cbc:TaxInclusiveAmount", currencyID="COP").text = str(invoice.invoice.total or 0)
+        ET.SubElement(monetary, "cbc:PayableAmount", currencyID="COP").text = str(invoice.invoice.total or 0)
+
+        # Items
+        for i, item in enumerate(invoice.items, start=1):
+            line = ET.SubElement(root, "cac:InvoiceLine")
+            ET.SubElement(line, "cbc:ID").text = str(i)
+            ET.SubElement(line, "cbc:InvoicedQuantity").text = str(item.quantity or 0)
+            ET.SubElement(line, "cbc:LineExtensionAmount", currencyID="COP").text = str(item.total or 0)
+            item_el = ET.SubElement(line, "cac:Item")
+            ET.SubElement(item_el, "cbc:Description").text = item.description or ""
+            price = ET.SubElement(line, "cac:Price")
+            ET.SubElement(price, "cbc:PriceAmount", currencyID="COP").text = str(item.unit_price or 0)
+
+        return ET.tostring(root, encoding="unicode", xml_declaration=False)
+    
+    def export_invoice_pdf(self, invoice: InvoiceFullRead) -> bytes:
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=letter,
+            rightMargin=40, leftMargin=40,
+            topMargin=40, bottomMargin=40
+        )
+
+        styles = getSampleStyleSheet()
+        elements = []
+
+        # ── Título ──
+        title_style = ParagraphStyle(
+            "title",
+            parent=styles["Heading1"],
+            fontSize=18,
+            textColor=colors.HexColor("#1a1a2e"),
+            spaceAfter=6
+        )
+        elements.append(Paragraph("FACTURA", title_style))
+        elements.append(Paragraph(f"N° {invoice.invoice.invoice_number}", styles["Heading2"]))
+        elements.append(Spacer(1, 12))
+
+        # ── Info general ──
+        info_data = [
+            ["Fecha de emisión", str(invoice.invoice.issue_date or "N/A")],
+            ["Categoría", invoice.invoice.category or "N/A"],
+            ["Estado", invoice.invoice.status],
+            ["Proveedor", invoice.provider.name],
+            ["NIT", invoice.provider.nit or "N/A"],
+        ]
+        info_table = Table(info_data, colWidths=[150, 300])
+        info_table.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+            ("FONTNAME", (1, 0), (1, -1), "Helvetica"),
+            ("FONTSIZE", (0, 0), (-1, -1), 10),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#444444")),
+        ]))
+        elements.append(info_table)
+        elements.append(Spacer(1, 20))
+
+        # ── Items ──
+        elements.append(Paragraph("Detalle de Items", styles["Heading3"]))
+        elements.append(Spacer(1, 8))
+
+        item_headers = ["Descripción", "Cantidad", "Precio Unit.", "Total"]
+        item_data = [item_headers] + [
+            [
+                item.description or "",
+                str(item.quantity or 0),
+                f"${item.unit_price:,.0f}" if item.unit_price else "N/A",
+                f"${item.total:,.0f}" if item.total else "N/A"
+            ]
+            for item in invoice.items
+        ]
+        item_table = Table(item_data, colWidths=[220, 80, 100, 100])
+        item_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1a1a2e")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f5f5f5")]),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cccccc")),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
+        ]))
+        elements.append(item_table)
+        elements.append(Spacer(1, 20))
+
+        # ── Totales ──
+        totals_data = [
+            ["Subtotal", f"${invoice.invoice.subtotal:,.0f}" if invoice.invoice.subtotal else "N/A"],
+            ["IVA", f"${invoice.invoice.iva:,.0f}" if invoice.invoice.iva else "N/A"],
+            ["Total", f"${invoice.invoice.total:,.0f}" if invoice.invoice.total else "N/A"],
+        ]
+        totals_table = Table(totals_data, colWidths=[380, 120])
+        totals_table.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (-1, -2), "Helvetica"),
+            ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 10),
+            ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+            ("LINEABOVE", (0, -1), (-1, -1), 1, colors.HexColor("#1a1a2e")),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        elements.append(totals_table)
+
+        doc.build(elements)
+        return buffer.getvalue()
