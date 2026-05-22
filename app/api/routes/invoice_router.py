@@ -1,9 +1,11 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, UploadFile, File
 from typing import List
 from uuid import UUID
 
+from app.auth.dependencies import get_current_user
+from app.models.user import User
 from app.schemas.requests.invoice_create import InvoiceSaveRequest
 from app.services.interfaces.invoice_service_interface import InvoiceServiceInterface
 from app.api.deps.invoice_service_dep import get_invoice_service
@@ -83,3 +85,54 @@ def get_invoices_by_status(
     service: InvoiceServiceInterface = Depends(get_invoice_service)
 ):
     return service.get_invoices_by_status(status, skip, limit)
+
+@invoice_router.get("/{id_invoice}/export/csv")
+def export_csv(
+    id_invoice: UUID,
+    service: InvoiceServiceInterface = Depends(get_invoice_service),
+    current_user: User = Depends(get_current_user)
+):
+    invoice = service.get_invoice_by_id(id_invoice)
+    if invoice.invoice.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para exportar esta factura")
+    
+    csv_content = service.export_invoice_csv(invoice)
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=factura_{invoice.invoice.invoice_number}.csv"}
+    )
+
+@invoice_router.get("/{id_invoice}/export/xml")
+def export_xml(
+    id_invoice: UUID,
+    service: InvoiceServiceInterface = Depends(get_invoice_service),
+    current_user: User = Depends(get_current_user)
+):
+    invoice = service.get_invoice_by_id(id_invoice)
+    if invoice.invoice.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para exportar esta factura")
+    
+    xml_content = service.export_invoice_xml(invoice)
+    return Response(
+        content=xml_content,
+        media_type="application/xml",
+        headers={"Content-Disposition": f"attachment; filename=factura_{invoice.invoice.invoice_number}.xml"}
+    )
+
+@invoice_router.get("/{id_invoice}/export/pdf")
+def export_pdf(
+    id_invoice: UUID,
+    service: InvoiceServiceInterface = Depends(get_invoice_service),
+    current_user: User = Depends(get_current_user)
+):
+    invoice = service.get_invoice_by_id(id_invoice)
+    if invoice.invoice.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para exportar esta factura")
+    
+    pdf_content = service.export_invoice_pdf(invoice)
+    return Response(
+        content=pdf_content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=factura_{invoice.invoice.invoice_number}.pdf"}
+    )

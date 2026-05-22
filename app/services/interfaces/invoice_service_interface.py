@@ -22,3 +22,15 @@ class InvoiceServiceInterface(ABC):
     @abstractmethod
     def get_invoice_by_id(self, id: UUID) -> InvoiceFullRead:
         pass
+    
+    @abstractmethod
+    def export_invoice_pdf(self, invoice: InvoiceFullRead) -> bytes:
+        pass
+
+    @abstractmethod
+    def export_invoice_xml(self, invoice: InvoiceFullRead) -> str:
+        pass
+
+    @abstractmethod
+    def export_invoice_csv(self, invoice: InvoiceFullRead) -> str:
+        pass
