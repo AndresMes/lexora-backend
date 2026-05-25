@@ -22,17 +22,24 @@ class InvoiceRepository:
             )
         )
 
-    def get_by_id(self, invoice_id: UUID) -> Optional[Invoice]:
-        stmt = self._base_query().where(Invoice.id == invoice_id)
+    def get_by_id(self, user_id: UUID, invoice_id: UUID) -> Optional[Invoice]:
+        stmt = self._base_query().where(Invoice.user_id==user_id).where(Invoice.id == invoice_id)
         return self.session.exec(stmt).first()
 
-    def get_all(self, skip: int = 0, limit: int = 100) -> List[Invoice]:
-        stmt = self._base_query().order_by(Invoice.created_at.desc()).offset(skip).limit(limit)
-        return self.session.exec(stmt).all()
-
-    def get_by_created_at_range(self, start_date: datetime, end_date: datetime, skip: int = 0, limit: int = 100) -> List[Invoice]:
+    def get_all_by_user(self, user_id: UUID, skip: int = 0, limit: int = 100) -> List[Invoice]:
         stmt = (
             self._base_query()
+            .where(Invoice.user_id == user_id)
+            .order_by(Invoice.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        return self.session.exec(stmt).all()
+
+    def get_by_created_at_range(self, user_id:UUID, start_date: datetime, end_date: datetime, skip: int = 0, limit: int = 100) -> List[Invoice]:
+        stmt = (
+            self._base_query()
+            .where(Invoice.user_id == user_id)
             .where(Invoice.created_at >= start_date)
             .where(Invoice.created_at <= end_date)
             .order_by(Invoice.created_at.desc())
@@ -41,9 +48,10 @@ class InvoiceRepository:
         )
         return self.session.exec(stmt).all()
     
-    def get_by_issue_date_range(self, start_date: date, end_date: date, skip: int = 0, limit: int = 100) -> List[Invoice]:
+    def get_by_issue_date_range(self, user_id:UUID, start_date: date, end_date: date, skip: int = 0, limit: int = 100) -> List[Invoice]:
         stmt = (
             self._base_query()
+            .where(Invoice.user_id == user_id)
             .where(Invoice.issue_date >= start_date)
             .where(Invoice.issue_date <= end_date)
             .order_by(Invoice.issue_date.desc())
@@ -52,9 +60,10 @@ class InvoiceRepository:
         )
         return self.session.exec(stmt).all()
 
-    def get_by_provider_id(self, provider_id: UUID, skip: int = 0, limit: int = 100) -> List[Invoice]:
+    def get_by_provider_id(self, user_id:UUID, provider_id: UUID, skip: int = 0, limit: int = 100) -> List[Invoice]:
         stmt = (
             self._base_query()
+            .where(Invoice.user_id == user_id)
             .where(Invoice.provider_id == provider_id)
             .order_by(Invoice.created_at.desc())
             .offset(skip)
@@ -62,9 +71,10 @@ class InvoiceRepository:
         )
         return self.session.exec(stmt).all()
 
-    def get_by_category(self, category: str, skip: int = 0, limit: int = 100) -> List[Invoice]:
+    def get_by_category(self, user_id:UUID, category: str, skip: int = 0, limit: int = 100) -> List[Invoice]:
         stmt = (
             self._base_query()
+            .where(Invoice.user_id == user_id)
             .where(Invoice.category == category)
             .order_by(Invoice.created_at.desc())
             .offset(skip)
@@ -72,9 +82,10 @@ class InvoiceRepository:
         )
         return self.session.exec(stmt).all()
 
-    def get_by_status(self, status: str, skip: int = 0, limit: int = 100) -> List[Invoice]:
+    def get_by_status(self, user_id:UUID, status: str, skip: int = 0, limit: int = 100) -> List[Invoice]:
         stmt = (
             self._base_query()
+            .where(Invoice.user_id == user_id)
             .where(Invoice.status == status)
             .order_by(Invoice.created_at.desc())
             .offset(skip)
