@@ -7,6 +7,7 @@ from uuid import UUID
 from app.auth.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.requests.invoice_create import InvoiceSaveRequest
+from app.schemas.requests.invoice_update import InvoiceUpdate
 from app.services.interfaces.invoice_service_interface import InvoiceServiceInterface
 from app.api.deps.invoice_service_dep import get_invoice_service
 
@@ -85,6 +86,31 @@ def get_invoices_by_status(
     service: InvoiceServiceInterface = Depends(get_invoice_service)
 ):
     return service.get_invoices_by_status(status, skip, limit)
+
+@invoice_router.patch("/{id_invoice}/status")
+def update_invoice_status(
+    id_invoice: UUID,
+    status: str = Query(...),
+    service: InvoiceServiceInterface = Depends(get_invoice_service),
+    current_user: User = Depends(get_current_user)
+):
+    invoice = service.get_invoice_by_id(id_invoice)
+    if invoice.invoice.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta factura")
+    return service.update_invoice_status(id_invoice, status)
+
+@invoice_router.patch("/{id_invoice}", response_model=InvoiceFullRead)
+def update_invoice(
+    id_invoice: UUID,
+    dto: InvoiceUpdate,
+    service: InvoiceServiceInterface = Depends(get_invoice_service),
+    current_user: User = Depends(get_current_user)
+):
+    invoice = service.get_invoice_by_id(id_invoice)
+    if invoice.invoice.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta factura")
+    return service.update_invoice(id_invoice, dto)
+    
 
 @invoice_router.get("/{id_invoice}/export/csv")
 def export_csv(

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List
 from uuid import UUID
 
+from app.schemas.requests.invoice_update import InvoiceUpdate
 from app.schemas.responses.invoice_full import InvoiceFullRead
 
 
@@ -16,7 +17,7 @@ class InvoiceServiceInterface(ABC):
         pass
     
     @abstractmethod
-    def list_invoices(self) -> List[InvoiceFullRead]:
+    def list_invoices(self, user_id: UUID) -> List[InvoiceFullRead]:
         pass
     
     @abstractmethod
@@ -33,4 +34,12 @@ class InvoiceServiceInterface(ABC):
 
     @abstractmethod
     def export_invoice_csv(self, invoice: InvoiceFullRead) -> str:
+        pass
+    
+    @abstractmethod
+    def update_invoice(self, id: UUID, dto: InvoiceUpdate) -> InvoiceFullRead:
+        pass
+
+    @abstractmethod
+    def update_invoice_status(self, id: UUID, status: str) -> InvoiceFullRead:
         pass

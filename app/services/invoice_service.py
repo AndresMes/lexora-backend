@@ -28,6 +28,7 @@ from app.repositories.document_repository import DocumentRepository
 from app.repositories.invoice_repository import InvoiceRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.requests.invoice_create import InvoiceSaveRequest
+from app.schemas.requests.invoice_update import InvoiceUpdate
 from app.schemas.responses.document_read import DocumentRead
 from app.schemas.responses.extracted_field_read import ExtractedFieldRead
 from app.schemas.responses.invoice_full import InvoiceFullRead
@@ -208,7 +209,7 @@ class InvoiceService(InvoiceServiceInterface):
         return [self._to_full_read(inv) for inv in invoices]
 
     def get_invoices_by_status(self, status: str, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
-        valid_statuses = {"PENDING", "APPROVED", "REJECTED"}
+        valid_statuses = {"PENDING", "VALIDATED", "ERROR"}
         if status.upper() not in valid_statuses:
             raise HTTPException(
                 status_code=400,
@@ -217,6 +218,124 @@ class InvoiceService(InvoiceServiceInterface):
 
         invoices = self.invoice_repo.get_by_status(status.upper(), skip, limit)
         return [self._to_full_read(inv) for inv in invoices]
+    
+    def update_invoice(self, id: UUID, dto: InvoiceUpdate) -> InvoiceFullRead:
+        invoice = self.invoice_repo.get_by_id(id)
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Factura no encontrada")
+
+        if dto.category is not None:
+            invoice.category = dto.category.strip()
+
+        if dto.issue_date is not None:
+            invoice.issue_date = dto.issue_date
+
+        if dto.subtotal is not None:
+            invoice.subtotal = dto.subtotal
+
+        if dto.iva is not None:
+            invoice.iva = dto.iva
+
+        if dto.total is not None:
+            invoice.total = dto.total
+
+        if invoice.subtotal is not None and invoice.iva is not None and invoice.total is not None:
+            expected_total = round(float(invoice.subtotal) + float(invoice.iva), 2)
+            if round(float(invoice.total), 2) != expected_total:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"El total ({invoice.total}) no coincide con subtotal + iva ({expected_total})."
+                )
+        
+        if dto.items is not None:
+            existing_items = {item.id: item for item in invoice.items}
+            
+            for item_dto in dto.items:
+                if item_dto.id is None:
+
+                    new_item = InvoiceItem(
+                        invoice_id=invoice.id,
+                        description=item_dto.description,
+                        quantity=item_dto.quantity,
+                        unit_price=item_dto.unit_price,
+                        total=item_dto.total
+                    )
+                    invoice.items.append(new_item)
+                else:
+
+                    if item_dto.id not in existing_items:
+                        raise HTTPException(
+                            status_code=404,
+                            detail=f"Item con id {item_dto.id} no pertenece a esta factura"
+                        )
+                    item = existing_items[item_dto.id]
+                    if item_dto.description is not None:
+                        item.description = item_dto.description
+                    if item_dto.quantity is not None:
+                        item.quantity = item_dto.quantity
+                    if item_dto.unit_price is not None:
+                        item.unit_price = item_dto.unit_price
+                    if item_dto.total is not None:
+                        item.total = item_dto.total
+        
+        if dto.delete_items is not None:
+            existing_items = {item.id: item for item in invoice.items}
+            
+            for item_id in dto.delete_items:
+                if item_id not in existing_items:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Item con id {item_id} no pertenece a esta factura"
+                    )
+                invoice.items.remove(existing_items[item_id])
+
+        updated = self.invoice_repo.update(invoice)
+
+        audit = AuditLog(
+            user_id=invoice.user_id,
+            action=AuditAction.UPDATE,
+            entity=AuditEntity.INVOICE,
+            entity_id=invoice.id
+        )
+        self.audit_repo.create(audit)
+
+        return self._to_full_read(updated)
+    
+    def update_invoice_status(self, id, status):
+        
+        ALLOWED_STATUSES = {"PENDING", "VALIDATED", "ERROR"}
+        
+        if status not in ALLOWED_STATUSES:
+            raise HTTPException(status_code=400, detail="El estado proveido no está entre los aceptados")
+        
+        invoice = self.invoice_repo.get_by_id(id)
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Factura no encontrada")
+        
+        invoice_status = invoice.status
+        
+        if invoice_status == "PENDING" and status == "PENDING":
+            raise HTTPException(status_code=409, detail="La factura ya está en estado PENDING")
+        
+        if invoice_status == "ERROR" and status == "VALIDATED":
+            raise HTTPException(status_code=409, detail="No puede pasar de ERROR a VALIDATED")
+        
+        if invoice_status == "VALIDATED" and status == "ERROR":
+            raise HTTPException(status_code=409, detail="No puede pasar de VALIDATED a ERROR")
+        
+        invoice.status = status
+        
+        updated = self.invoice_repo.update(invoice)
+        
+        audit = AuditLog(
+            user_id=invoice.user_id,
+            action=AuditAction.UPDATE,
+            entity=AuditEntity.INVOICE,
+            entity_id=invoice.id
+        )
+        self.audit_repo.create(audit)
+
+        return self._to_full_read(updated)
     
     def _to_full_read(self, invoice: Invoice) -> InvoiceFullRead:
         return InvoiceFullRead(
