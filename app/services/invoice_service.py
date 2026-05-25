@@ -35,6 +35,7 @@ from app.schemas.responses.invoice_read import InvoiceRead
 from app.schemas.responses.party_read import PartyRead
 from app.services.interfaces.invoice_service_interface import InvoiceServiceInterface
 from app.services.party_service import PartyService
+from app.utils.cloudinary_utils import upload_file
 
 
 class InvoiceService(InvoiceServiceInterface):
@@ -49,10 +50,11 @@ class InvoiceService(InvoiceServiceInterface):
     
     async def process_invoice(self, file: UploadFile):
         file_bytes = await file.read()
-        result = await self.orchestator.process_invoice(file_bytes, file.filename)
-        
+        file_url = upload_file(file_bytes)
+        result = await self.orchestator.process_invoice(file_bytes)
+                
         return {
-            "filename": file.filename,
+            "file_url": file_url,
             "ocr_result": result
         }
     
