@@ -171,44 +171,44 @@ class InvoiceService(InvoiceServiceInterface):
             extracted_fields=[ExtractedFieldRead.model_validate(f) for f in saved_invoice.extracted_fields]
         )
     
-    def list_invoices(self) -> List[InvoiceFullRead]:
-        invoices = self.invoice_repo.get_all()
+    def list_invoices(self, user_id: UUID, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
+        invoices = self.invoice_repo.get_all_by_user(user_id, skip, limit)
         
         return [self._to_full_read(inv) for inv in invoices]
     
-    def get_invoice_by_id(self, id: UUID) -> InvoiceFullRead:
-        invoice = self.invoice_repo.get_by_id(id)
+    def get_invoice_by_id(self, user_id: UUID, id: UUID) -> InvoiceFullRead:
+        invoice = self.invoice_repo.get_by_id(user_id, id)
 
         if not invoice:
             raise HTTPException(status_code=404, detail="Factura no encontrada")
 
         return self._to_full_read(invoice)
 
-    def get_invoices_by_date(self, start_date: date, end_date: date, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
+    def get_invoices_by_date(self, user_id:UUID, start_date: date, end_date: date, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
     
         if start_date > end_date:
             raise HTTPException(status_code=400, detail="La fecha de inicio no puede ser mayor a la fecha de fin.")
 
-        invoices = self.invoice_repo.get_by_issue_date_range(start_date, end_date, skip, limit)
+        invoices = self.invoice_repo.get_by_issue_date_range(user_id, start_date, end_date, skip, limit)
 
         return [self._to_full_read(inv) for inv in invoices]
         
-    def get_invoices_by_provider(self, provider_id: UUID, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
+    def get_invoices_by_provider(self, user_id:UUID, provider_id: UUID, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
         provider = self.party_service.get_by_id(provider_id)
         if not provider:
             raise HTTPException(status_code=404, detail="Proveedor no encontrado.")
 
-        invoices = self.invoice_repo.get_by_provider_id(provider_id, skip, limit)
+        invoices = self.invoice_repo.get_by_provider_id(user_id, provider_id, skip, limit)
         return [self._to_full_read(inv) for inv in invoices]
 
-    def get_invoices_by_category(self, category: str, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
+    def get_invoices_by_category(self, user_id:UUID, category: str, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
         if not category.strip():
             raise HTTPException(status_code=400, detail="La categoría no puede estar vacía.")
 
-        invoices = self.invoice_repo.get_by_category(category.strip(), skip, limit)
+        invoices = self.invoice_repo.get_by_category(user_id, category.strip(), skip, limit)
         return [self._to_full_read(inv) for inv in invoices]
 
-    def get_invoices_by_status(self, status: str, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
+    def get_invoices_by_status(self, user_id:UUID, status: str, skip: int = 0, limit: int = 100) -> List[InvoiceFullRead]:
         valid_statuses = {"PENDING", "VALIDATED", "ERROR"}
         if status.upper() not in valid_statuses:
             raise HTTPException(
@@ -216,7 +216,7 @@ class InvoiceService(InvoiceServiceInterface):
                 detail=f"Estado inválido. Debe ser uno de: {valid_statuses}"
             )
 
-        invoices = self.invoice_repo.get_by_status(status.upper(), skip, limit)
+        invoices = self.invoice_repo.get_by_status(user_id, status.upper(), skip, limit)
         return [self._to_full_read(inv) for inv in invoices]
     
     def update_invoice(self, id: UUID, dto: InvoiceUpdate) -> InvoiceFullRead:
