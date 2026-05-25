@@ -18,11 +18,13 @@ from app.enums.audit_action_enum import AuditAction
 from app.enums.audit_entity import AuditEntity
 from app.enums.party_type_enum import PartyType
 from app.models.audit_log import AuditLog
+from app.models.document import Document
 from app.models.extracted_field import ExtractedField
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.orchestator.orchestator import InvoiceOrchestator
 from app.repositories.audit_log_repository import AuditLogRepository
+from app.repositories.document_repository import DocumentRepository
 from app.repositories.invoice_repository import InvoiceRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.requests.invoice_create import InvoiceSaveRequest
@@ -40,23 +42,34 @@ from app.utils.cloudinary_utils import upload_file
 
 class InvoiceService(InvoiceServiceInterface):
     
-    def __init__(self, invoice_repo: InvoiceRepository, party_service: PartyService, audit_repo: AuditLogRepository, user_repo: UserRepository, orchestator: InvoiceOrchestator):
+    def __init__(self, 
+                 invoice_repo: InvoiceRepository, 
+                 party_service: PartyService, 
+                 audit_repo: AuditLogRepository, 
+                 user_repo: UserRepository, 
+                 document_repo: DocumentRepository, 
+                 orchestator: InvoiceOrchestator):
         
         self.invoice_repo = invoice_repo
         self.party_service = party_service
         self.orchestator = orchestator
         self.audit_repo = audit_repo
         self.user_repo = user_repo
+        self.document_repo = document_repo
     
     async def process_invoice(self, file: UploadFile):
-        file_bytes = await file.read()
-        file_url = upload_file(file_bytes)
-        result = await self.orchestator.process_invoice(file_bytes)
-                
-        return {
-            "file_url": file_url,
-            "ocr_result": result
-        }
+        try:
+            file_bytes = await file.read()
+            file_url = upload_file(file_bytes)
+            result = await self.orchestator.process_invoice(file_bytes)
+                    
+            return {
+                "file_url": file_url,
+                "ocr_result": result
+            }
+            
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="Error processing invoice")
     
     def save_invoice(self, data: InvoiceSaveRequest) -> InvoiceFullRead:
 
@@ -129,8 +142,17 @@ class InvoiceService(InvoiceServiceInterface):
                 status_code=409,
                 detail=f"Ya existe una factura con el número '{data.invoice_number}' para este proveedor."
             )
+            
+        # 9. Guardar documento
+        if data.file_url:
+            document = Document(
+                invoice_id=saved_invoice.id,
+                file_url=data.file_url,
+                file_type=data.file_type
+            )
+            self.document_repo.create(document)
 
-        # 9. Registrar AuditLog
+        # 10. Registrar AuditLog
         audit = AuditLog(
             user_id=data.user_id,
             action=AuditAction.CREATE,
@@ -139,12 +161,12 @@ class InvoiceService(InvoiceServiceInterface):
         )
         self.audit_repo.create(audit)
 
-        # 10. Construir y retornar InvoiceFullRead
+        # 11. Construir y retornar InvoiceFullRead
         return InvoiceFullRead(
             invoice=InvoiceRead.model_validate(saved_invoice),
             provider=PartyRead.model_validate(provider),
             items=[InvoiceItemRead.model_validate(i) for i in saved_invoice.items],
-            document=DocumentRead.model_validate(saved_invoice.document) if saved_invoice.document else None,
+            document=DocumentRead.model_validate(document) if saved_invoice.document else None,
             extracted_fields=[ExtractedFieldRead.model_validate(f) for f in saved_invoice.extracted_fields]
         )
     
