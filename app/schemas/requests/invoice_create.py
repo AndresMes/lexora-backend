@@ -17,6 +17,9 @@ class InvoiceSaveRequest(BaseModel):
     total: Optional[float] = None
     category: Optional[str] = None
     status: str = "PENDING"
+    
+    file_url: Optional[str] = None     
+    file_type: Optional[str] = None
 
     provider: PartyCreate
     items: List[InvoiceItemCreate] = []

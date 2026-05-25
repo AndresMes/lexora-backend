@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from typing import Optional
 from datetime import datetime
@@ -12,3 +12,5 @@ class DocumentRead(BaseModel):
     file_type: Optional[str]
 
     uploaded_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
