@@ -219,8 +219,8 @@ class InvoiceService(InvoiceServiceInterface):
         invoices = self.invoice_repo.get_by_status(user_id, status.upper(), skip, limit)
         return [self._to_full_read(inv) for inv in invoices]
     
-    def update_invoice(self, id: UUID, dto: InvoiceUpdate) -> InvoiceFullRead:
-        invoice = self.invoice_repo.get_by_id(id)
+    def update_invoice(self, user_id: UUID, id: UUID, dto: InvoiceUpdate) -> InvoiceFullRead:
+        invoice = self.invoice_repo.get_by_id(user_id, id)
         if not invoice:
             raise HTTPException(status_code=404, detail="Factura no encontrada")
 
@@ -301,14 +301,14 @@ class InvoiceService(InvoiceServiceInterface):
 
         return self._to_full_read(updated)
     
-    def update_invoice_status(self, id, status):
+    def update_invoice_status(self, user_id: UUID, id: UUID, status):
         
         ALLOWED_STATUSES = {"PENDING", "VALIDATED", "ERROR"}
         
         if status not in ALLOWED_STATUSES:
             raise HTTPException(status_code=400, detail="El estado proveido no está entre los aceptados")
         
-        invoice = self.invoice_repo.get_by_id(id)
+        invoice = self.invoice_repo.get_by_id(user_id, id)
         if not invoice:
             raise HTTPException(status_code=404, detail="Factura no encontrada")
         

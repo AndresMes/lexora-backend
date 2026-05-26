@@ -61,7 +61,7 @@ def get_invoice_by_id(
     service: InvoiceServiceInterface = Depends(get_invoice_service),
     current_user: User = Depends(get_current_user)
 ):
-    invoice = service.get_invoice_by_id(invoice_id)
+    invoice = service.get_invoice_by_id(current_user.id, invoice_id)
     if invoice.invoice.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="No tienes permiso para ver esta factura")
     return invoice
@@ -106,10 +106,10 @@ def update_invoice_status(
     service: InvoiceServiceInterface = Depends(get_invoice_service),
     current_user: User = Depends(get_current_user)
 ):
-    invoice = service.get_invoice_by_id(id_invoice)
+    invoice = service.get_invoice_by_id(current_user.id,id_invoice)
     if invoice.invoice.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta factura")
-    return service.update_invoice_status(id_invoice, status)
+    return service.update_invoice_status(current_user.id, id_invoice, status)
 
 @invoice_router.patch("/{id_invoice}", response_model=InvoiceFullRead)
 def update_invoice(
@@ -118,10 +118,10 @@ def update_invoice(
     service: InvoiceServiceInterface = Depends(get_invoice_service),
     current_user: User = Depends(get_current_user)
 ):
-    invoice = service.get_invoice_by_id(id_invoice)
+    invoice = service.get_invoice_by_id(current_user.id,id_invoice)
     if invoice.invoice.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta factura")
-    return service.update_invoice(id_invoice, dto)
+    return service.update_invoice(current_user.id, id_invoice, dto)
     
 
 @invoice_router.get("/{id_invoice}/export/csv")
