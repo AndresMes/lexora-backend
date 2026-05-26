@@ -130,7 +130,7 @@ def export_csv(
     service: InvoiceServiceInterface = Depends(get_invoice_service),
     current_user: User = Depends(get_current_user)
 ):
-    invoice = service.get_invoice_by_id(id_invoice)
+    invoice = service.get_invoice_by_id(current_user.id, id_invoice)
     if invoice.invoice.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="No tienes permiso para exportar esta factura")
     
@@ -147,7 +147,7 @@ def export_xml(
     service: InvoiceServiceInterface = Depends(get_invoice_service),
     current_user: User = Depends(get_current_user)
 ):
-    invoice = service.get_invoice_by_id(id_invoice)
+    invoice = service.get_invoice_by_id(current_user.id, id_invoice)
     if invoice.invoice.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="No tienes permiso para exportar esta factura")
     
@@ -164,7 +164,7 @@ def export_pdf(
     service: InvoiceServiceInterface = Depends(get_invoice_service),
     current_user: User = Depends(get_current_user)
 ):
-    invoice = service.get_invoice_by_id(id_invoice)
+    invoice = service.get_invoice_by_id(current_user.id, id_invoice)
     if invoice.invoice.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="No tienes permiso para exportar esta factura")
     

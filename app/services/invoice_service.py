@@ -260,7 +260,8 @@ class InvoiceService(InvoiceServiceInterface):
                         unit_price=item_dto.unit_price,
                         total=item_dto.total
                     )
-                    invoice.items.append(new_item)
+                    self.session.add(new_item)
+                #    invoice.items.append(new_item)
                 else:
 
                     if item_dto.id not in existing_items:
