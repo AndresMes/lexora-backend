@@ -85,7 +85,7 @@ class UserService(UserServiceInterface):
 
         # ── Actualizar nombre ──
         if userDto.name is not None:
-            user.name = userDto.name.lower()
+            user.name = userDto.name
 
         # ── Actualizar contraseña ──
         if userDto.password is not None:
