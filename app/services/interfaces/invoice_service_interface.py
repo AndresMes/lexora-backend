@@ -61,3 +61,7 @@ class InvoiceServiceInterface(ABC):
     @abstractmethod
     def update_invoice_status(self, id: UUID, status: str) -> InvoiceFullRead:
         pass
+    
+    @abstractmethod
+    def delete_invoice_by_id(self, user_id: UUID, invoice_id: UUID):
+        pass

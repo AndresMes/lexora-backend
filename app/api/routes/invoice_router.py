@@ -174,3 +174,12 @@ def export_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=factura_{invoice.invoice.invoice_number}.pdf"}
     )
+
+@invoice_router.delete("/{id_invoice}")
+def delete_invoice(
+    id_invoice:UUID,
+    service: InvoiceServiceInterface = Depends(get_invoice_service),
+    current_user: User = Depends(get_current_user)
+):
+    return service.delete_invoice_by_id(current_user.id, id_invoice)
+    

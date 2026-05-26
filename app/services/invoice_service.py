@@ -337,6 +337,14 @@ class InvoiceService(InvoiceServiceInterface):
 
         return self._to_full_read(updated)
     
+    def delete_invoice_by_id(self, user_id, invoice_id):
+        invoice = self.invoice_repo.get_by_id(user_id=user_id, invoice_id=invoice_id)
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Factura no encontrada")
+
+        self.invoice_repo.delete(invoice)
+        return {"message": "Factura eliminada satisfactoriamente"}
+            
     def _to_full_read(self, invoice: Invoice) -> InvoiceFullRead:
         return InvoiceFullRead(
             invoice=InvoiceRead.model_validate(invoice),
