@@ -70,14 +70,25 @@ class UserService(UserServiceInterface):
         if not user:
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-        existing_user = self.user_repo.get_by_email(userDto.email)
-        if existing_user and existing_user.id != id_user:
-            raise HTTPException(status_code=409, detail="El email ingresado ya está en uso")
+        # ── Actualizar email ──
+        if userDto.email is not None:
+            normalized_email = userDto.email.lower().strip()
+            existing_user = self.user_repo.get_by_email(normalized_email)
 
-        user.email = userDto.email.lower().strip()
-        user.name = userDto.name.lower()
+            if existing_user and existing_user.id != id_user:
+                raise HTTPException(
+                    status_code=409,
+                    detail="El email ingresado ya está en uso"
+                )
 
-        if userDto.password:
+            user.email = normalized_email
+
+        # ── Actualizar nombre ──
+        if userDto.name is not None:
+            user.name = userDto.name.lower()
+
+        # ── Actualizar contraseña ──
+        if userDto.password is not None:
             user.password_hash = hash_password(userDto.password)
 
         updated_user = self.user_repo.update_user(user)
