@@ -27,7 +27,6 @@ def get_party_all(
     return service.get_all()
 
 
-# 🔥 RUTAS ESPECÍFICAS PRIMERO
 @party_router.get("/nit/{nit}", response_model=PartyRead)
 def get_party_by_nit(
     nit: str,
@@ -51,8 +50,6 @@ def get_parties_by_name(
 ):
     return service.search_by_name(party_name)
 
-
-# 🔥 AL FINAL (genérica)
 @party_router.get("/{id_party}", response_model=PartyRead)
 def get_party_by_id(
     id_party: UUID,
