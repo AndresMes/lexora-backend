@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from app.api.deps.db_session import get_db
 from app.repositories.audit_log_repository import AuditLogRepository
+from app.repositories.document_repository import DocumentRepository
 from app.repositories.invoice_repository import InvoiceRepository
 from app.repositories.party_repository import PartyRepository
 from app.repositories.user_repository import UserRepository
@@ -23,3 +24,6 @@ def get_party_repo(session: Session = Depends(get_db)):
 
 def get_audit_log_repo(session: Session = Depends(get_db)):
     return AuditLogRepository(session)
+
+def get_document_repo(session: Session = Depends(get_db)):
+    return DocumentRepository(session)

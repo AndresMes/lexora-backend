@@ -3,13 +3,15 @@ from typing import List
 from uuid import UUID
 
 from app.api.deps.party_service_dep import get_party_service
+from app.auth.dependencies import get_current_user
 from app.enums.party_type_enum import PartyType
+from app.models.user import User
 from app.schemas.requests.party_create import PartyCreate
 from app.schemas.requests.party_update import PartyUpdate
 from app.schemas.responses.party_read import PartyRead
 from app.services.interfaces.party_service_interface import PartyServiceInterface
 
-party_router = APIRouter(prefix="/parties", tags=["Parties"])
+party_router = APIRouter(prefix="/parties", tags=["Parties"], dependencies=[Depends(get_current_user)])
 
 
 @party_router.post("/", response_model=PartyRead)
@@ -27,7 +29,6 @@ def get_party_all(
     return service.get_all()
 
 
-# 🔥 RUTAS ESPECÍFICAS PRIMERO
 @party_router.get("/nit/{nit}", response_model=PartyRead)
 def get_party_by_nit(
     nit: str,
@@ -51,8 +52,6 @@ def get_parties_by_name(
 ):
     return service.search_by_name(party_name)
 
-
-# 🔥 AL FINAL (genérica)
 @party_router.get("/{id_party}", response_model=PartyRead)
 def get_party_by_id(
     id_party: UUID,

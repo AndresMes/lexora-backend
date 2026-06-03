@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+import os
+import cloudinary
 import easyocr
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
@@ -9,13 +11,31 @@ from app.api.routes.user_router import user_router
 from .api.routes.invoice_router import invoice_router
 from app.api.routes.audit_log_router import audit_router
 import app.models
+from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.ocr_reader = easyocr.Reader(['es'], gpu=False)
+    
+    cloudinary.config(
+        cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+        api_key=os.getenv("CLOUDINARY_API_KEY"),
+        api_secret=os.getenv("CLOUDINARY_API_SECRET")
+    )
+    
     yield
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173", #Ruta del frontend
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/", response_class=HTMLResponse)
 def read_root():

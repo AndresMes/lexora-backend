@@ -26,8 +26,8 @@ class Invoice(SQLModel, table=True):
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    document: Optional["Document"] = Relationship(back_populates="invoice") # type: ignore
+    document: Optional["Document"] = Relationship(back_populates="invoice", sa_relationship_kwargs={"cascade": "all, delete-orphan"}) # type: ignore
     provider: Optional["Party"] = Relationship(back_populates="invoices") #type: ignore
 
     items: list["InvoiceItem"] = Relationship(back_populates="invoice",sa_relationship_kwargs={"cascade": "all, delete-orphan"}) # type: ignore
-    extracted_fields: list["ExtractedField"] = Relationship(back_populates="invoice") # type: ignore
+    extracted_fields: list["ExtractedField"] = Relationship(back_populates="invoice", sa_relationship_kwargs={"cascade": "all, delete-orphan"}) # type: ignore

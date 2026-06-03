@@ -9,7 +9,7 @@ from app.schemas.responses.user_read import UserRead
 from app.services.interfaces.user_service_interface import UserServiceInterface
 
 
-user_router = APIRouter(prefix="/users", tags=["Users"])
+user_router = APIRouter(prefix="/users", tags=["Users"], dependencies=[Depends(get_current_user)])
 
 @user_router.post("/", response_model=UserRead)
 def create_user(

@@ -10,7 +10,7 @@ class InvoiceOrchestator:
         self.ocr_processor = ocr_processor
         self.llm_extractor = llm_extractor
         
-    async def process_invoice(self, file_bytes: bytes, filename: str):
+    async def process_invoice(self, file_bytes: bytes):
         
         processed_image = self.preprocessor.preprocess_image(file_bytes)
         ocr_result = self.ocr_processor.extract_text(processed_image)
