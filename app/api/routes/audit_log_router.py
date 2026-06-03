@@ -3,6 +3,7 @@ from typing import List
 from uuid import UUID
 
 from app.api.deps.audit_log_service_dep import get_audit_log_service
+from app.auth.dependencies import get_current_user
 from app.enums.audit_action_enum import AuditAction
 from app.enums.audit_entity import AuditEntity
 from app.schemas.filters.audit_log_filter import AuditLogFilter
@@ -10,7 +11,7 @@ from app.schemas.requests.audit_log_create import AuditLogCreate
 from app.schemas.responses.audit_log_read import AuditLogRead
 from app.services.audit_log_service import AuditLogService
 
-audit_router = APIRouter(prefix="/audit-logs", tags=["Audit Logs"])
+audit_router = APIRouter(prefix="/audit-logs", tags=["Audit Logs"], dependencies=[Depends(get_current_user)])
 
 
 @audit_router.post("/", response_model=AuditLogRead)

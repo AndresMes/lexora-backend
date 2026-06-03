@@ -15,7 +15,7 @@ from app.schemas.responses.invoice_full import InvoiceFullRead
 
 
 
-invoice_router = APIRouter(prefix="/invoices", tags=["Invoices"])
+invoice_router = APIRouter(prefix="/invoices", tags=["Invoices"], dependencies=[Depends(get_current_user)])
 
 
 @invoice_router.post("/process")
