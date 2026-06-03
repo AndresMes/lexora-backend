@@ -155,7 +155,7 @@ Full CRUD for providers/clients and read-only audit log access with filters.
 ### 1. Clone and install
  
 ```bash
-git clone https://github.com/your-username/lexora-backend.git
+git clone https://github.com/AndresMes/lexora-backend.git
 cd lexora-backend
 python -m venv venv
 venv\Scripts\activate        # Windows
